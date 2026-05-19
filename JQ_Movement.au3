@@ -1,7 +1,7 @@
 #include-once
 #include "..\GwAu3-main\API\_GwAu3.au3"
 
-#Region - Variables de Mouvement
+#Region - Movement globals
 Global $CapThisQuarry
 Global $PurpleCapped = False
 Global $YellowCapped = False
@@ -22,12 +22,12 @@ Func ComputeDistance($x1, $y1, $x2, $y2)
     Return Sqrt(($x1 - $x2) ^ 2 + ($y1 - $y2) ^ 2)
 EndFunc
 
-; Déplace vers ($fX, $fY) avec détection de blocage basée sur les vecteurs de déplacement.
-; Reproduit le pattern AddOns_MoveTo de Encounter ReBuilt :
-;   - Un seul Map_Move initial, puis relance si MoveX=0 et MoveY=0 pendant plusieurs ticks.
-;   - Au 10e tick bloqué : envoi de /stuck dans le chat GW.
-;   - Au 20e tick bloqué : abandon avec False.
-;   - $iTimeout (ms) pour éviter une boucle infinie en cas de géométrie bloquante.
+; Moves to ($fX, $fY) using velocity-based stuck detection, mirroring
+; the AddOns_MoveTo pattern from Encounter ReBuilt:
+;   - Single initial Map_Move, re-issued whenever MoveX=0 and MoveY=0.
+;   - At 10 stuck ticks: sends /stuck in GW chat.
+;   - At 20 stuck ticks: aborts and returns False.
+;   - $iTimeout (ms) prevents infinite loops on impassable geometry.
 Func JQ_MoveTo($fX, $fY, $iArrivalDist = 200, $iTimeout = 30000)
     Local $myID = Agent_GetMyID()
     If $myID = 0 Then Return False
@@ -71,17 +71,15 @@ Func JQ_MoveTo($fX, $fY, $iArrivalDist = 200, $iTimeout = 30000)
     Return True
 EndFunc
 
-; Navigue vers le portail $iPortal et attend l'activation du téléport.
+; Navigates to portal $iPortal and waits for the teleport to trigger.
 Func GoPortal($iPortal)
     Local $pX = $aPortals[$iPortal][0]
     Local $pY = $aPortals[$iPortal][1]
-    JQ_Log("[PORTAL] Navigation vers portail #" & $iPortal & "  cible=(" & $pX & "," & $pY & ")")
+    JQ_Log("[PORTAL] Moving to portal #" & $iPortal & "  target=(" & $pX & "," & $pY & ")")
 
     Local $myID = Agent_GetMyID()
-
-    ; Boucle : avancer vers le portail jusqu'à ce que le téléport se déclenche
-    ; (map type bascule en OUTPOST ou distance au point de téléport < 400).
     Local $tMax = TimerInit()
+
     Do
         If Map_GetInstanceInfo("Type") = $GC_I_MAP_TYPE_LOADING Then Return
         If Map_GetInstanceInfo("Type") = $GC_I_MAP_TYPE_OUTPOST Then Return
@@ -90,7 +88,7 @@ Func GoPortal($iPortal)
         Local $myX = Agent_GetAgentInfo($myID, "X")
         Local $myY = Agent_GetAgentInfo($myID, "Y")
         Local $distTeleport = ComputeDistance($myX, $myY, $aTeleports[$iPortal][0], $aTeleports[$iPortal][1])
-        JQ_Log("[PORTAL] Dist téléport=" & Round($distTeleport) & "  pos=(" & Round($myX) & "," & Round($myY) & ")")
+        JQ_Log("[PORTAL] Teleport dist=" & Round($distTeleport) & "  pos=(" & Round($myX) & "," & Round($myY) & ")")
 
         If $distTeleport < 400 Then ExitLoop
 
@@ -98,10 +96,10 @@ Func GoPortal($iPortal)
 
     Until False
 
-    JQ_Log("[PORTAL] Portail atteint.")
+    JQ_Log("[PORTAL] Portal reached.")
 EndFunc
 
-; Vérifie quelle carrière est à portée et non encore cappée.
+; Returns the index of the nearest reachable uncapped quarry, or 50 if none.
 Func CheckQuarry()
     Local $myID = Agent_GetMyID()
     Local $myX = Agent_GetAgentInfo($myID, "X")
@@ -124,10 +122,10 @@ Func CheckQuarry()
     Return 50
 EndFunc
 
-; Se déplace vers la carrière $QuarryNumber.
+; Moves toward quarry shrine $QuarryNumber.
 Func MoveToQuarry($QuarryNumber)
     Local $lDestX = $aShrines[$QuarryNumber][0]
     Local $lDestY = $aShrines[$QuarryNumber][1]
-    JQ_Log("[QUARRY] Déplacement vers carrière " & $QuarryNumber & " -> (" & Round($lDestX) & "," & Round($lDestY) & ")")
+    JQ_Log("[QUARRY] Moving to quarry " & $QuarryNumber & " -> (" & Round($lDestX) & "," & Round($lDestY) & ")")
     JQ_MoveTo($lDestX, $lDestY, 300, 20000)
 EndFunc

@@ -7,51 +7,41 @@ Func SmartCast()
     Local $myID = Agent_GetMyID()
     Local $isDead = Agent_GetAgentInfo($myID, "IsDead")
     Local $castingSkill = Agent_GetAgentInfo($myID, "Skill")
-    ConsoleWrite("[SMARTCAST] MyID=" & $myID & "  IsDead=" & $isDead & "  CastingSkill=" & $castingSkill & @CRLF)
+    JQ_Log("[SMARTCAST] MyID=" & $myID & "  IsDead=" & $isDead & "  CastingSkill=" & $castingSkill)
 
     If $isDead Then
-        ConsoleWrite("[SMARTCAST] Personnage mort, annulation." & @CRLF)
+        JQ_Log("[SMARTCAST] Dead, aborting.")
         Return False
     EndIf
 
-    ; Récupère la cible actuelle via la fonction correcte de l'API
     Local $target = Agent_GetCurrentTarget()
-    ConsoleWrite("[SMARTCAST] Cible courante (Agent_GetCurrentTarget) : " & $target & @CRLF)
+    JQ_Log("[SMARTCAST] Current target: " & $target)
 
     For $i = 1 To 8
         If $Skill_FAILED = $i Then
-            ConsoleWrite("[SMARTCAST] Slot " & $i & " marqué FAILED, skip." & @CRLF)
+            JQ_Log("[SMARTCAST] Slot " & $i & " marked FAILED, skipping.")
             $Skill_FAILED = 0
             ContinueLoop
         EndIf
 
-        ; Vérifie le rechargement via la skillbar (pas la base de données statique)
         Local $rechargeTime = Skill_GetSkillbarInfo($i, "Recharge")
         Local $skillID = Skill_GetSkillbarInfo($i, "SkillID")
-        ConsoleWrite("[SMARTCAST] Slot " & $i & "  SkillID=" & $skillID & "  Recharge=" & $rechargeTime & @CRLF)
+        JQ_Log("[SMARTCAST] Slot " & $i & "  SkillID=" & $skillID & "  Recharge=" & $rechargeTime)
 
-        If $rechargeTime > 0 Then
-            ConsoleWrite("[SMARTCAST] Slot " & $i & " encore en recharge (" & $rechargeTime & "), skip." & @CRLF)
-            ContinueLoop
-        EndIf
-
-        If $skillID = 0 Then
-            ConsoleWrite("[SMARTCAST] Slot " & $i & " vide, skip." & @CRLF)
-            ContinueLoop
-        EndIf
+        If $rechargeTime > 0 Then ContinueLoop
+        If $skillID = 0 Then ContinueLoop
 
         If $target > 0 And Agent_GetAgentInfo($target, "Allegiance") = $GC_I_ALLEGIANCE_ENEMY Then
-            ConsoleWrite("[SMARTCAST] Cast slot " & $i & " sur cible " & $target & @CRLF)
+            JQ_Log("[SMARTCAST] Casting slot " & $i & " on target " & $target)
             UseSkillEx($i, $target)
             Return True
         Else
-            ConsoleWrite("[SMARTCAST] Cible invalide ou pas ennemie (Allegiance=" & Agent_GetAgentInfo($target, "Allegiance") & "), pas de cast." & @CRLF)
+            JQ_Log("[SMARTCAST] Invalid or non-enemy target (Allegiance=" & Agent_GetAgentInfo($target, "Allegiance") & "), no cast.")
         EndIf
     Next
 
-    ; Aucune compétence disponible, attaque basique
     If $target > 0 And Agent_GetAgentInfo($target, "Allegiance") = $GC_I_ALLEGIANCE_ENEMY Then
-        ConsoleWrite("[SMARTCAST] Aucune compétence dispo, attaque basique sur " & $target & @CRLF)
+        JQ_Log("[SMARTCAST] No skill available, basic attack on " & $target)
         Agent_Attack($target)
     EndIf
 
@@ -61,25 +51,22 @@ EndFunc
 Func UseSkillEx($skillSlot, $targetId, $timeout = 5200)
     Local $myID = Agent_GetMyID()
     Local $castingSkill = Agent_GetAgentInfo($myID, "Skill")
-    ConsoleWrite("[USESKILL] Slot=" & $skillSlot & "  Target=" & $targetId & "  CastingSkill=" & $castingSkill & @CRLF)
+    JQ_Log("[USESKILL] Slot=" & $skillSlot & "  Target=" & $targetId & "  CastingSkill=" & $castingSkill)
 
     If $castingSkill <> 0 Then
-        ConsoleWrite("[USESKILL] Déjà en train de caster (Skill=" & $castingSkill & "), annulation." & @CRLF)
+        JQ_Log("[USESKILL] Already casting (Skill=" & $castingSkill & "), aborting.")
         Return False
     EndIf
 
     Local $tDeadlock = TimerInit()
 
-    ; Change de cible si nécessaire
     Local $currentTarget = Agent_GetCurrentTarget()
-    ConsoleWrite("[USESKILL] Cible actuelle=" & $currentTarget & "  Cible voulue=" & $targetId & @CRLF)
     If $currentTarget <> $targetId Then
-        ConsoleWrite("[USESKILL] Changement de cible vers " & $targetId & @CRLF)
+        JQ_Log("[USESKILL] Switching target to " & $targetId)
         Agent_ChangeTarget($targetId)
     EndIf
 
-    ; Lance la compétence en passant explicitement la cible
-    ConsoleWrite("[USESKILL] Lancement Skill_UseSkill(slot=" & $skillSlot & ", target=" & $targetId & ")" & @CRLF)
+    JQ_Log("[USESKILL] Calling Skill_UseSkill(slot=" & $skillSlot & ", target=" & $targetId & ")")
     Skill_UseSkill($skillSlot, $targetId)
 
     Do
@@ -87,24 +74,23 @@ Func UseSkillEx($skillSlot, $targetId, $timeout = 5200)
         Local $myDead = Agent_GetAgentInfo($myID, "IsDead")
         Local $targetDead = Agent_GetAgentInfo($targetId, "IsDead")
         Local $recharge = Skill_GetSkillbarInfo($skillSlot, "Recharge")
-        ConsoleWrite("[USESKILL] En cours... MyDead=" & $myDead & "  TargetDead=" & $targetDead & "  Recharge=" & $recharge & "  Elapsed=" & Round(TimerDiff($tDeadlock)) & "ms" & @CRLF)
 
         If $myDead Then
-            ConsoleWrite("[USESKILL] Personnage mort pendant le cast." & @CRLF)
+            JQ_Log("[USESKILL] Character died during cast.")
             Return False
         EndIf
         If $targetDead Then
-            ConsoleWrite("[USESKILL] Cible morte pendant le cast." & @CRLF)
+            JQ_Log("[USESKILL] Target died during cast.")
             Return False
         EndIf
     Until ($recharge > 0) Or TimerDiff($tDeadlock) > $timeout
 
     If TimerDiff($tDeadlock) > $timeout Then
-        ConsoleWrite("[USESKILL] TIMEOUT sur slot " & $skillSlot & " après " & $timeout & "ms." & @CRLF)
+        JQ_Log("[USESKILL] Timeout on slot " & $skillSlot & " after " & $timeout & "ms.")
         $Skill_FAILED = $skillSlot
         Return False
     EndIf
 
-    ConsoleWrite("[USESKILL] Compétence slot " & $skillSlot & " lancée avec succès." & @CRLF)
+    JQ_Log("[USESKILL] Skill slot " & $skillSlot & " cast successfully.")
     Return True
 EndFunc

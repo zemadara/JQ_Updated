@@ -21,7 +21,7 @@ Func JQ_GetPriorityTarget()
     Local $myY = Agent_GetAgentInfo($myID, "Y")
     Local $maxAgents = Agent_GetMaxAgents()
 
-    ConsoleWrite("[TARGET] Recherche cible prioritaire. MaxAgents=" & $maxAgents & "  Faction=" & $PlayingFor & @CRLF)
+    JQ_Log("[TARGET] Scanning for priority target. MaxAgents=" & $maxAgents & "  Side=" & $PlayingFor)
 
     Local $bestTarget = 0
     Local $bestScore = 0
@@ -51,18 +51,18 @@ Func JQ_GetPriorityTarget()
         If ($PlayingFor = "Kurzick" And $modelId = $GreenTurtleMID) Or _
            ($PlayingFor = "Luxon" And $modelId = $PurpleCarrierJuggernautMID) Then
             $score = 1000
-            ConsoleWrite("[TARGET] Agent " & $i & " est la cible prioritaire (carrier/turtle), ModelID=" & $modelId & @CRLF)
+            JQ_Log("[TARGET] Agent " & $i & " is priority target (carrier/turtle), ModelID=" & $modelId)
         EndIf
 
         If JQ_IsEnemyGuard($modelId) Then
             $score = 500
-            ConsoleWrite("[TARGET] Agent " & $i & " est un garde ennemi, ModelID=" & $modelId & @CRLF)
+            JQ_Log("[TARGET] Agent " & $i & " is an enemy guard, ModelID=" & $modelId)
         EndIf
 
         $score += (1500 - $dist) / 10
         $scannedEnemies += 1
 
-        ConsoleWrite("[TARGET] Agent " & $i & "  ModelID=" & $modelId & "  Dist=" & Round($dist) & "  Score=" & Round($score) & @CRLF)
+        JQ_Log("[TARGET] Agent " & $i & "  ModelID=" & $modelId & "  Dist=" & Round($dist) & "  Score=" & Round($score))
 
         If $score > $bestScore Then
             $bestScore = $score
@@ -70,7 +70,7 @@ Func JQ_GetPriorityTarget()
         EndIf
     Next
 
-    ConsoleWrite("[TARGET] Scan terminé. Ennemis trouvés=" & $scannedEnemies & "  Meilleure cible=" & $bestTarget & "  Score=" & Round($bestScore) & @CRLF)
+    JQ_Log("[TARGET] Scan done. Enemies=" & $scannedEnemies & "  BestTarget=" & $bestTarget & "  Score=" & Round($bestScore))
     Return $bestTarget
 EndFunc
 

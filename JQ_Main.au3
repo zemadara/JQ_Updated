@@ -11,22 +11,19 @@
 #include <StaticConstants.au3>
 #include <WindowsConstants.au3>
 
-; --- LIAISON AVEC LA LIBRAIRIE GWAU3 ---
 #include "..\GwAu3-main\API\_GwAu3.au3"
 
-; --- Variables Globales (déclarées AVANT les modules qui les utilisent) ---
-Global $boolRun = False  ; mis à True par le bouton Run dans la GUI
+; --- Globals ---
+Global $boolRun = False  ; set to True by the Run button in the GUI
 Global $PlayingFor = "Kurzick"
 Global $iTotalRuns = 0
 Global $MyTotalZkeys = 0
 Global $MID_Zkey = 28517
 
-; Identifiants des cartes Jade Quarry
 Global Const $JadeQuarryKurzickID = 296
 Global Const $JadeQuarryLuxonID = 295
 Global Const $JadeQuarryArenaID = 223
 
-; --- INCLUSION DES MODULES JQ ---
 #include "JQ_GUI.au3"
 #include "JQ_Movement.au3"
 #include "JQ_Combat.au3"
@@ -34,7 +31,7 @@ Global Const $JadeQuarryArenaID = 223
 #include "JQ_Economy.au3"
 
 ; ---------------------------------------------------------------------------
-; Stubs requis par AU3Check (GwAu3 optional hooks - jamais appelés en pratique)
+; Stubs required by AU3Check (GwAu3 optional hooks — never called in practice)
 ; ---------------------------------------------------------------------------
 Func StartBot()
 EndFunc
@@ -55,37 +52,37 @@ EndFunc
 
 Main()
 
-#Region - Logique Principale
+#Region - Main Logic
 
 Func Main()
     JQ_GUI_Create()
-    JQ_Log("[MAIN] Démarrage du bot JQ...")
+    JQ_Log("[MAIN] Starting JQ bot...")
 
     Local $hWnd = WinGetHandle("Guild Wars")
     If Not $hWnd Then
-        MsgBox(16, "Erreur", "Guild Wars n'est pas lancé.")
+        MsgBox(16, "Error", "Guild Wars is not running.")
         Exit
     EndIf
-    JQ_Log("[MAIN] Fenêtre Guild Wars trouvée : handle=" & $hWnd)
+    JQ_Log("[MAIN] Guild Wars window found: handle=" & $hWnd)
 
     Local $l_a_PID = DllCall("user32.dll", "dword", "GetWindowThreadProcessId", "hwnd", $hWnd, "dword*", 0)
     Local $l_pid = $l_a_PID[2]
-    JQ_Log("[MAIN] PID Guild Wars : " & $l_pid)
+    JQ_Log("[MAIN] Guild Wars PID: " & $l_pid)
     If $l_pid = 0 Then
-        MsgBox(16, "Erreur", "Impossible de récupérer le PID de Guild Wars.")
+        MsgBox(16, "Error", "Failed to retrieve Guild Wars PID.")
         Exit
     EndIf
 
-    JQ_Log("[MAIN] Initialisation GwAu3...")
+    JQ_Log("[MAIN] Initializing GwAu3...")
     Local $initResult = Core_Initialize($l_pid)
-    JQ_Log("[MAIN] Résultat Core_Initialize : " & $initResult)
+    JQ_Log("[MAIN] Core_Initialize result: " & $initResult)
     If Not $initResult Then
-        MsgBox(16, "Erreur", "Impossible d'initialiser GwAu3. Vérifier que GW tourne bien.")
+        MsgBox(16, "Error", "Failed to initialize GwAu3. Make sure Guild Wars is running.")
         Exit
     EndIf
 
     $g_bGwInitialized = True
-    JQ_Log("[MAIN] Bot JQ initialisé avec succès !")
+    JQ_Log("[MAIN] JQ bot initialized successfully.")
 
     While 1
         Sleep(100)
@@ -101,10 +98,10 @@ Func Main()
             Local $myID = Agent_GetMyID()
 
             If $myID = 0 Then
-                JQ_Log("[LOOP] Personnage non détecté (MyID=0), attente 3s...")
+                JQ_Log("[LOOP] Character not detected (MyID=0), waiting 3s...")
                 Sleep(3000)
                 If Agent_GetMyID() = 0 Then
-                    JQ_Log("[LOOP] Toujours non détecté, tentative reconnexion.")
+                    JQ_Log("[LOOP] Still not detected, attempting reconnect.")
                     ControlSend($hWnd, "", "", "{Enter}")
                     Sleep(7000)
                 EndIf
@@ -119,7 +116,7 @@ Func Main()
                     JQ_Log("[LOOP] -> OutpostLogic (map=" & $currentMap & ")")
                     OutpostLogic($currentMap)
                 Case Else
-                    JQ_Log("[LOOP] Carte inconnue (MapID=" & $currentMap & "). En attente...")
+                    JQ_Log("[LOOP] Unknown map (MapID=" & $currentMap & "). Waiting...")
                     Sleep(5000)
             EndSelect
         Else
@@ -129,13 +126,13 @@ Func Main()
 EndFunc
 
 Func ArenaLogic()
-    JQ_Log("[ARENA] Entrée en zone de combat.")
+    JQ_Log("[ARENA] Entered combat zone.")
 
     Local $RandomPortal = ($PlayingFor = "Kurzick") ? Random(0, 2, 1) : Random(3, 5, 1)
-    JQ_Log("[ARENA] Faction=" & $PlayingFor & "  Portail choisi=" & $RandomPortal)
+    JQ_Log("[ARENA] Side=" & $PlayingFor & "  Portal=" & $RandomPortal)
     GoPortal($RandomPortal)
 
-    JQ_Log("[ARENA] Portail atteint, début de la boucle de combat.")
+    JQ_Log("[ARENA] Portal reached, starting combat loop.")
 
     While Map_GetCharacterInfo("MapID") = $JadeQuarryArenaID And Map_GetInstanceInfo("Type") = $GC_I_MAP_TYPE_EXPLORABLE And $boolRun
         Sleep(250)
@@ -144,7 +141,7 @@ Func ArenaLogic()
         Local $isDead = Agent_GetAgentInfo($myID, "IsDead")
 
         If $isDead Then
-            JQ_Log("[ARENA] Personnage mort, attente de résurrection...")
+            JQ_Log("[ARENA] Dead, waiting for resurrection...")
             Local $tRes = TimerInit()
             Do
                 Sleep(500)
@@ -152,7 +149,7 @@ Func ArenaLogic()
             Until Not $isDead Or TimerDiff($tRes) > 30000 Or Map_GetCharacterInfo("MapID") <> $JadeQuarryArenaID
 
             If Not $isDead And Map_GetCharacterInfo("MapID") = $JadeQuarryArenaID Then
-                JQ_Log("[ARENA] Ressuscité, retour vers un portail.")
+                JQ_Log("[ARENA] Resurrected, heading back to a portal.")
                 $RandomPortal = ($PlayingFor = "Kurzick") ? Random(0, 2, 1) : Random(3, 5, 1)
                 GoPortal($RandomPortal)
             EndIf
@@ -193,67 +190,67 @@ Func ArenaLogic()
                     EndIf
                 Next
                 If $nearestIdx >= 0 Then
-                    JQ_Log("[ARENA] Repli vers shrine " & $nearestIdx)
+                    JQ_Log("[ARENA] Moving to nearest shrine " & $nearestIdx)
                     MoveToQuarry($nearestIdx)
                 EndIf
             EndIf
         EndIf
     WEnd
 
-    JQ_Log("[ARENA] Sortie de l'arène détectée.")
+    JQ_Log("[ARENA] Left arena.")
     GameOver()
 EndFunc
 
 Func OutpostLogic($mapId)
     $PlayingFor = ($mapId = $JadeQuarryKurzickID) ? "Kurzick" : "Luxon"
-    JQ_Log("[OUTPOST] Mode Ville : " & $PlayingFor & "  (MapID=" & $mapId & ")")
+    JQ_Log("[OUTPOST] Side: " & $PlayingFor & "  (MapID=" & $mapId & ")")
 
     Sleep(3000)
 
     If Map_GetCharacterInfo("MapID") <> $mapId Then Return
 
-    JQ_Log("[OUTPOST] Échange faction Impériale -> Balthazar...")
+    JQ_Log("[OUTPOST] Trading Imperial faction for Balthazar...")
     TradeImperialX()
 
     If Map_GetCharacterInfo("MapID") <> $mapId Then
-        JQ_Log("[OUTPOST] Match démarré pendant TradeImperialX, abandon échanges.")
+        JQ_Log("[OUTPOST] Match started during TradeImperialX, skipping trades.")
         Return
     EndIf
 
-    JQ_Log("[OUTPOST] Achat de Zkeys avec la faction Balthazar...")
+    JQ_Log("[OUTPOST] Buying Zkeys with Balthazar faction...")
     Local $iZkeyBefore = Item_GetItemInfoByModelID($MID_Zkey, "Quantity")
     TradeBalthazarX()
     Local $iZkeyAfter = Item_GetItemInfoByModelID($MID_Zkey, "Quantity")
     If $iZkeyAfter > $iZkeyBefore Then
         $MyTotalZkeys += ($iZkeyAfter - $iZkeyBefore)
-        JQ_Log("[OUTPOST] " & ($iZkeyAfter - $iZkeyBefore) & " Zkey(s) obtenus. Total session : " & $MyTotalZkeys)
+        JQ_Log("[OUTPOST] " & ($iZkeyAfter - $iZkeyBefore) & " Zkey(s) obtained. Session total: " & $MyTotalZkeys)
     EndIf
 
     If Map_GetCharacterInfo("MapID") <> $mapId Then
-        JQ_Log("[OUTPOST] Match démarré pendant TradeBalthazarX.")
+        JQ_Log("[OUTPOST] Match started during TradeBalthazarX.")
         Return
     EndIf
 
-    JQ_Log("[OUTPOST] Inscription en file d'attente...")
+    JQ_Log("[OUTPOST] Joining match queue...")
     Map_EnterChallenge(False)
-    JQ_Log("[OUTPOST] En file d'attente. Attente du match...")
+    JQ_Log("[OUTPOST] In queue, waiting for match...")
 
     Local $tRequeue = TimerInit()
     While Map_GetCharacterInfo("MapID") = $mapId And $boolRun
         Sleep(2000)
         If TimerDiff($tRequeue) > 60000 Then
-            JQ_Log("[OUTPOST] Réinscription en file (60s sans match)...")
+            JQ_Log("[OUTPOST] Re-queuing (60s without match)...")
             Map_EnterChallenge(False)
             $tRequeue = TimerInit()
         EndIf
     WEnd
 
-    JQ_Log("[OUTPOST] Sortie file d'attente. MapID=" & Map_GetCharacterInfo("MapID"))
+    JQ_Log("[OUTPOST] Left queue. MapID=" & Map_GetCharacterInfo("MapID"))
 EndFunc
 
 Func GameOver()
     $iTotalRuns += 1
-    JQ_Log("[GAMEOVER] Match fini. Total parties : " & $iTotalRuns)
+    JQ_Log("[GAMEOVER] Match over. Total runs: " & $iTotalRuns)
     Sleep(5000)
 EndFunc
 
