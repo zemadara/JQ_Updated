@@ -27,7 +27,7 @@ Func _Trade_FindNearestNPC($targetX, $targetY, $maxDist = 600)
         Local $dist = ComputeDistance($nX, $nY, $targetX, $targetY)
 
         Local $mid = Agent_GetAgentInfo($i, "ModelID")
-        ConsoleWrite("[TRADE] NPC " & $i & "  ModelID=" & $mid & "  dist=" & Round($dist) & "  pos=(" & Round($nX) & "," & Round($nY) & ")" & @CRLF)
+        JQ_Log("[TRADE] NPC " & $i & "  ModelID=" & $mid & "  dist=" & Round($dist) & "  pos=(" & Round($nX) & "," & Round($nY) & ")")
 
         If $dist < $bestDist Then
             $bestDist = $dist
@@ -43,9 +43,9 @@ EndFunc
 ; Description: Échange la faction Impériale contre Balthazar auprès de l'officier de faction.
 ; =================================================================================================
 Func TradeImperialX()
-    ConsoleWrite("[TRADE] Début TradeImperialX..." & @CRLF)
+    JQ_Log("[TRADE] Début TradeImperialX...")
     Local $currentMap = Map_GetCharacterInfo("MapID")
-    ConsoleWrite("[TRADE] MapID=" & $currentMap & @CRLF)
+    JQ_Log("[TRADE] MapID=" & $currentMap)
 
     Local $npcX, $npcY
     If $currentMap = 296 Then
@@ -55,23 +55,22 @@ Func TradeImperialX()
         $npcX = 2472
         $npcY = 11757
     Else
-        ConsoleWrite("[TRADE] MapID inconnu, abandon TradeImperialX." & @CRLF)
+        JQ_Log("[TRADE] MapID inconnu, abandon TradeImperialX.")
         Return False
     EndIf
 
-    ConsoleWrite("[TRADE] Déplacement vers officier faction (" & $npcX & "," & $npcY & ")" & @CRLF)
-    Move($npcX, $npcY, 30)
-    Sleep(3000)
+    JQ_Log("[TRADE] Déplacement vers officier faction (" & $npcX & "," & $npcY & ")")
+    JQ_MoveTo($npcX, $npcY, 400, 20000)
 
     Local $npcId = _Trade_FindNearestNPC($npcX, $npcY, 600)
-    ConsoleWrite("[TRADE] Officier faction ID=" & $npcId & @CRLF)
+    JQ_Log("[TRADE] Officier faction ID=" & $npcId)
 
     If $npcId = 0 Then
-        ConsoleWrite("[TRADE] Aucun PNJ trouvé à portée des coords officier." & @CRLF)
+        JQ_Log("[TRADE] Aucun PNJ trouvé à portée des coords officier.")
         Return False
     EndIf
 
-    ConsoleWrite("[TRADE] Interaction officier ID=" & $npcId & @CRLF)
+    JQ_Log("[TRADE] Interaction officier ID=" & $npcId)
     Agent_GoNPC($npcId)
 
     Local $tWalkImp = TimerInit()
@@ -82,28 +81,28 @@ Func TradeImperialX()
         Local $nXImp  = Agent_GetAgentInfo($npcId, "X")
         Local $nYImp  = Agent_GetAgentInfo($npcId, "Y")
         Local $dImp   = ComputeDistance($myXImp, $myYImp, $nXImp, $nYImp)
-        ConsoleWrite("[TRADE] Approche officier... dist=" & Round($dImp) & "  perso=(" & Round($myXImp) & "," & Round($myYImp) & ")  npc=(" & Round($nXImp) & "," & Round($nYImp) & ")" & @CRLF)
+        JQ_Log("[TRADE] Approche officier... dist=" & Round($dImp) & "  perso=(" & Round($myXImp) & "," & Round($myYImp) & ")  npc=(" & Round($nXImp) & "," & Round($nYImp) & ")")
     Until $dImp < 250 Or TimerDiff($tWalkImp) > 20000 Or Map_GetCharacterInfo("MapID") <> $currentMap
 
     If Map_GetCharacterInfo("MapID") <> $currentMap Then
-        ConsoleWrite("[TRADE] Carte changée pendant approche officier, abandon TradeImperialX." & @CRLF)
+        JQ_Log("[TRADE] Carte changée pendant approche officier, abandon TradeImperialX.")
         Return False
     EndIf
 
-    ConsoleWrite("[TRADE] Dialog 0x97 (échange Impérial->Balthazar)" & @CRLF)
+    JQ_Log("[TRADE] Dialog 0x97 (échange Impérial->Balthazar)")
     Game_Dialog(0x97)
     Sleep(1500)
 
     If Map_GetCharacterInfo("MapID") <> $currentMap Then
-        ConsoleWrite("[TRADE] Carte changée après 0x97, abandon TradeImperialX." & @CRLF)
+        JQ_Log("[TRADE] Carte changée après 0x97, abandon TradeImperialX.")
         Return False
     EndIf
 
-    ConsoleWrite("[TRADE] Dialog 0xA3 (confirmation tout échanger)" & @CRLF)
+    JQ_Log("[TRADE] Dialog 0xA3 (confirmation tout échanger)")
     Game_Dialog(0xA3)
     Sleep(2000)
 
-    ConsoleWrite("[TRADE] TradeImperialX terminé." & @CRLF)
+    JQ_Log("[TRADE] TradeImperialX terminé.")
     Return True
 EndFunc
 
@@ -112,9 +111,9 @@ EndFunc
 ; Description: Achète des Zkeys auprès de Tolkano avec la faction Balthazar.
 ; =================================================================================================
 Func TradeBalthazarX()
-    ConsoleWrite("[TRADE] Début TradeBalthazarX..." & @CRLF)
+    JQ_Log("[TRADE] Début TradeBalthazarX...")
     Local $currentMap = Map_GetCharacterInfo("MapID")
-    ConsoleWrite("[TRADE] MapID=" & $currentMap & @CRLF)
+    JQ_Log("[TRADE] MapID=" & $currentMap)
 
     Local $tolkanoX, $tolkanoY
     If $currentMap = 296 Then
@@ -124,24 +123,23 @@ Func TradeBalthazarX()
         $tolkanoX = 3585
         $tolkanoY = 13641
     Else
-        ConsoleWrite("[TRADE] MapID inconnu, abandon TradeBalthazarX." & @CRLF)
+        JQ_Log("[TRADE] MapID inconnu, abandon TradeBalthazarX.")
         Return False
     EndIf
 
-    ConsoleWrite("[TRADE] Déplacement vers Tolkano (" & $tolkanoX & "," & $tolkanoY & ")" & @CRLF)
-    Move($tolkanoX, $tolkanoY, 30)
-    Sleep(3000)
+    JQ_Log("[TRADE] Déplacement vers Tolkano (" & $tolkanoX & "," & $tolkanoY & ")")
+    JQ_MoveTo($tolkanoX, $tolkanoY, 400, 20000)
 
     Local $tolkanoId = _Trade_FindNearestNPC($tolkanoX, $tolkanoY, 1500)
-    ConsoleWrite("[TRADE] Tolkano ID=" & $tolkanoId & @CRLF)
+    JQ_Log("[TRADE] Tolkano ID=" & $tolkanoId)
 
     If $tolkanoId = 0 Then
-        ConsoleWrite("[TRADE] Tolkano introuvable à portée." & @CRLF)
+        JQ_Log("[TRADE] Tolkano introuvable à portée.")
         Return False
     EndIf
 
     ; Un seul achat par appel — OutpostLogic doit boucler si nécessaire
-    ConsoleWrite("[TRADE] Interaction Tolkano ID=" & $tolkanoId & @CRLF)
+    JQ_Log("[TRADE] Interaction Tolkano ID=" & $tolkanoId)
     Agent_GoNPC($tolkanoId)
 
     Local $tWalkTol = TimerInit()
@@ -152,27 +150,27 @@ Func TradeBalthazarX()
         Local $nXTol  = Agent_GetAgentInfo($tolkanoId, "X")
         Local $nYTol  = Agent_GetAgentInfo($tolkanoId, "Y")
         Local $dTol   = ComputeDistance($myXTol, $myYTol, $nXTol, $nYTol)
-        ConsoleWrite("[TRADE] Approche Tolkano... dist=" & Round($dTol) & "  perso=(" & Round($myXTol) & "," & Round($myYTol) & ")  npc=(" & Round($nXTol) & "," & Round($nYTol) & ")" & @CRLF)
+        JQ_Log("[TRADE] Approche Tolkano... dist=" & Round($dTol) & "  perso=(" & Round($myXTol) & "," & Round($myYTol) & ")  npc=(" & Round($nXTol) & "," & Round($nYTol) & ")")
     Until $dTol < 250 Or TimerDiff($tWalkTol) > 20000 Or Map_GetCharacterInfo("MapID") <> $currentMap
 
     If Map_GetCharacterInfo("MapID") <> $currentMap Then
-        ConsoleWrite("[TRADE] Carte changée pendant approche Tolkano, abandon TradeBalthazarX." & @CRLF)
+        JQ_Log("[TRADE] Carte changée pendant approche Tolkano, abandon TradeBalthazarX.")
         Return False
     EndIf
 
-    ConsoleWrite("[TRADE] Dialog 0x87 (acheter Zkey)" & @CRLF)
+    JQ_Log("[TRADE] Dialog 0x87 (acheter Zkey)")
     Game_Dialog(0x87)
     Sleep(1500)
 
     If Map_GetCharacterInfo("MapID") <> $currentMap Then
-        ConsoleWrite("[TRADE] Carte changée après 0x87, abandon TradeBalthazarX." & @CRLF)
+        JQ_Log("[TRADE] Carte changée après 0x87, abandon TradeBalthazarX.")
         Return False
     EndIf
 
-    ConsoleWrite("[TRADE] Dialog 0x88 (confirmer achat)" & @CRLF)
+    JQ_Log("[TRADE] Dialog 0x88 (confirmer achat)")
     Game_Dialog(0x88)
     Sleep(2000)
 
-    ConsoleWrite("[TRADE] TradeBalthazarX terminé." & @CRLF)
+    JQ_Log("[TRADE] TradeBalthazarX terminé.")
     Return True
 EndFunc

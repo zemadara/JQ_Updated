@@ -15,7 +15,7 @@
 #include "..\GwAu3-main\API\_GwAu3.au3"
 
 ; --- Variables Globales (déclarées AVANT les modules qui les utilisent) ---
-Global $boolRun = True
+Global $boolRun = False  ; mis à True par le bouton Run dans la GUI
 Global $PlayingFor = "Kurzick"
 Global $iTotalRuns = 0
 Global $MyTotalZkeys = 0
