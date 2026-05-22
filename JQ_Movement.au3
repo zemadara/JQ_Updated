@@ -140,7 +140,7 @@ Func GoPortal($iPortal)
     Local $pY = $aPortals[$iPortal][1]
     JQ_Log("[PORTAL] Moving to portal #" & $iPortal & "  target=(" & $pX & "," & $pY & ")")
 
-    JQ_MoveTo($pX, $pY, 200, 25000)
+    JQ_MoveTo($pX, $pY, 500, 25000)
 
     Local $myID = Agent_GetMyID()
     Local $myX = Agent_GetAgentInfo($myID, "X")
