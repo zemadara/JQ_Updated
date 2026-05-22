@@ -239,7 +239,12 @@ Func OutpostLogic($mapId)
     While Map_GetCharacterInfo("MapID") = $mapId And $boolRun
         Sleep(2000)
         If TimerDiff($tRequeue) > 60000 Then
-            JQ_Log("[OUTPOST] Re-queuing (60s without match)...")
+            ; Cancel current queue slot before re-entering to avoid duplicate packet.
+            JQ_Log("[OUTPOST] Cancelling queue slot before re-entering...")
+            Core_SendPacket(0x4, $GC_I_HEADER_PARTY_CANCEL_ENTER_CHALLENGE)
+            Sleep(2000)
+            If Map_GetCharacterInfo("MapID") <> $mapId Then ExitLoop
+            JQ_Log("[OUTPOST] Re-queuing...")
             Map_EnterChallenge(False)
             $tRequeue = TimerInit()
         EndIf
