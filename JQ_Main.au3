@@ -235,25 +235,16 @@ Func OutpostLogic($mapId)
     Map_EnterChallenge(False)
     JQ_Log("[OUTPOST] In queue, waiting for match...")
 
-    Local $tRequeue = TimerInit()
+    ; GW keeps the queue slot alive server-side — no need to re-send the packet.
+    ; Sending EnterChallenge again while already queued causes a disconnect.
     While Map_GetCharacterInfo("MapID") = $mapId And $boolRun
         Sleep(2000)
-        If TimerDiff($tRequeue) > 60000 Then
-            ; Cancel current queue slot before re-entering to avoid duplicate packet.
-            JQ_Log("[OUTPOST] Cancelling queue slot before re-entering...")
-            Core_SendPacket(0x4, $GC_I_HEADER_PARTY_CANCEL_ENTER_CHALLENGE)
-            Sleep(2000)
-            If Map_GetCharacterInfo("MapID") <> $mapId Then ExitLoop
-            JQ_Log("[OUTPOST] Re-queuing...")
-            Map_EnterChallenge(False)
-            $tRequeue = TimerInit()
-        EndIf
     WEnd
 
-    ; If we exited because of pause (map unchanged), cancel the queue so the
-    ; character doesn't enter a match uncontrolled while the bot is paused.
+    ; Paused while in queue: cancel the slot so the character doesn't enter
+    ; a match uncontrolled while the bot is not running.
     If Map_GetCharacterInfo("MapID") = $mapId And Not $boolRun Then
-        JQ_Log("[OUTPOST] Bot paused while in queue, cancelling queue slot.")
+        JQ_Log("[OUTPOST] Bot paused, cancelling queue slot.")
         Core_SendPacket(0x4, $GC_I_HEADER_PARTY_CANCEL_ENTER_CHALLENGE)
     EndIf
 
