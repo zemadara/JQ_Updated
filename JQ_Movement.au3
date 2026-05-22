@@ -38,7 +38,6 @@ Func JQ_MoveTo($fX, $fY, $iArrivalDist = 200, $iTimeout = 30000)
 
     Do
         If Map_GetInstanceInfo("Type") = $GC_I_MAP_TYPE_LOADING Then Return False
-        If Map_GetInstanceInfo("Type") = $GC_I_MAP_TYPE_OUTPOST Then Return False
         If Agent_GetAgentInfo($myID, "IsDead") Then Return False
         If TimerDiff($tTimer) > $iTimeout Then Return False
 
