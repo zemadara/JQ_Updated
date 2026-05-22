@@ -40,10 +40,16 @@ Func JQ_MoveTo($fX, $fY, $iArrivalDist = 200, $iTimeout = 30000)
     Local $bInitialMove = True
 
     Do
-        If Map_GetInstanceInfo("Type") = $GC_I_MAP_TYPE_LOADING Then Return False
-        If Agent_GetAgentInfo($myID, "IsDead") Then Return False
+        If Map_GetInstanceInfo("Type") = $GC_I_MAP_TYPE_LOADING Then
+            JQ_Log("[MOVETO] Aborting - map loading.")
+            Return False
+        EndIf
+        If Agent_GetAgentInfo($myID, "IsDead") Then
+            JQ_Log("[MOVETO] Aborting - character dead.")
+            Return False
+        EndIf
         If TimerDiff($tTimer) > $iTimeout Then
-            JQ_Log("[MOVETO] Timeout reached for target=(" & Round($fX) & "," & Round($fY) & ")")
+            JQ_Log("[MOVETO] Timeout for (" & Round($fX) & "," & Round($fY) & ")")
             Return False
         EndIf
 
@@ -51,7 +57,10 @@ Func JQ_MoveTo($fX, $fY, $iArrivalDist = 200, $iTimeout = 30000)
         Local $myY = Agent_GetAgentInfo($myID, "Y")
         Local $dist = ComputeDistance($myX, $myY, $fX, $fY)
 
-        If $dist < $iArrivalDist Then ExitLoop
+        If $dist < $iArrivalDist Then
+            JQ_Log("[MOVETO] Arrived (dist=" & Round($dist) & " < " & $iArrivalDist & ")")
+            ExitLoop
+        EndIf
 
         If $bInitialMove Then
             $bInitialMove = False
@@ -115,7 +124,8 @@ Func GoPortal($iPortal)
             ExitLoop
         EndIf
 
-        JQ_MoveTo($pX, $pY, 350, 12000)
+        Local $moveResult = JQ_MoveTo($pX, $pY, 350, 12000)
+        JQ_Log("[PORTAL] JQ_MoveTo result=" & $moveResult)
 
     Until False
 

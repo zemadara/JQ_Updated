@@ -126,18 +126,37 @@ Func Main()
 EndFunc
 
 Func ArenaLogic()
-    JQ_Log("[ARENA] Entered combat zone, waiting for agents to initialize...")
-    Sleep(3000)
+    JQ_Log("[ARENA] Entered combat zone, waiting for initialization...")
 
     ; Reset quarry capture flags for this new run.
     $PurpleCapped = False
     $YellowCapped = False
     $GreenCapped = False
 
-    Local $myID = Agent_GetMyID()
+    ; Wait until character is alive and map is fully loaded.
+    Local $myID = 0
+    Local $tInit = TimerInit()
+    Do
+        Sleep(500)
+        $myID = Agent_GetMyID()
+        If $myID = 0 Then
+            JQ_Log("[ARENA] Waiting - MyID=0")
+            ContinueLoop
+        EndIf
+        If Map_GetInstanceInfo("Type") <> $GC_I_MAP_TYPE_EXPLORABLE Then
+            JQ_Log("[ARENA] Waiting - MapType=" & Map_GetInstanceInfo("Type"))
+            ContinueLoop
+        EndIf
+        If Agent_GetAgentInfo($myID, "IsDead") Then
+            JQ_Log("[ARENA] Waiting - IsDead=True")
+            ContinueLoop
+        EndIf
+        ExitLoop
+    Until TimerDiff($tInit) > 15000
+
     Local $myX = Agent_GetAgentInfo($myID, "X")
     Local $myY = Agent_GetAgentInfo($myID, "Y")
-    JQ_Log("[ARENA] MyID=" & $myID & "  pos=(" & Round($myX) & "," & Round($myY) & ")  MapType=" & Map_GetInstanceInfo("Type") & "  IsDead=" & Agent_GetAgentInfo($myID, "IsDead"))
+    JQ_Log("[ARENA] Ready. MyID=" & $myID & "  pos=(" & Round($myX) & "," & Round($myY) & ")  MapType=" & Map_GetInstanceInfo("Type") & "  IsDead=" & Agent_GetAgentInfo($myID, "IsDead"))
 
     ; Raw Map_Move test: verify movement works in this instance.
     JQ_Log("[ARENA] Map_Move test: moving to (" & Round($myX + 300) & "," & Round($myY + 300) & ")")
@@ -251,7 +270,7 @@ Func OutpostLogic($mapId)
     EndIf
 
     JQ_Log("[OUTPOST] Joining match queue...")
-    Map_EnterChallenge(False)
+    Core_SendPacket(0x8, $GC_I_HEADER_PARTY_ENTER_CHALLENGE, 0)
     JQ_Log("[OUTPOST] In queue, waiting for match...")
 
     ; GW keeps the queue slot alive server-side — no need to re-send the packet.
