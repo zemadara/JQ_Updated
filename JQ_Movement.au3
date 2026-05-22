@@ -90,16 +90,30 @@ Func GoPortal($iPortal)
     Local $tMax = TimerInit()
 
     Do
-        If Map_GetInstanceInfo("Type") = $GC_I_MAP_TYPE_LOADING Then Return
-        If Map_GetInstanceInfo("Type") = $GC_I_MAP_TYPE_OUTPOST Then Return
-        If TimerDiff($tMax) > 120000 Then Return
+        Local $mapType = Map_GetInstanceInfo("Type")
+        If $mapType = $GC_I_MAP_TYPE_LOADING Then
+            JQ_Log("[PORTAL] Map loading, aborting.")
+            Return
+        EndIf
+        If $mapType = $GC_I_MAP_TYPE_OUTPOST Then
+            JQ_Log("[PORTAL] Back in outpost, aborting.")
+            Return
+        EndIf
+        If TimerDiff($tMax) > 120000 Then
+            JQ_Log("[PORTAL] Timeout 120s, aborting.")
+            Return
+        EndIf
 
         Local $myX = Agent_GetAgentInfo($myID, "X")
         Local $myY = Agent_GetAgentInfo($myID, "Y")
+        Local $distPortal   = ComputeDistance($myX, $myY, $pX, $pY)
         Local $distTeleport = ComputeDistance($myX, $myY, $aTeleports[$iPortal][0], $aTeleports[$iPortal][1])
-        JQ_Log("[PORTAL] Teleport dist=" & Round($distTeleport) & "  pos=(" & Round($myX) & "," & Round($myY) & ")")
+        JQ_Log("[PORTAL] MapType=" & $mapType & "  pos=(" & Round($myX) & "," & Round($myY) & ")  distDoor=" & Round($distPortal) & "  distTeleport=" & Round($distTeleport))
 
-        If $distTeleport < 400 Then ExitLoop
+        If $distTeleport < 400 Then
+            JQ_Log("[PORTAL] Teleport destination reached (dist=" & Round($distTeleport) & "), exiting.")
+            ExitLoop
+        EndIf
 
         JQ_MoveTo($pX, $pY, 350, 12000)
 

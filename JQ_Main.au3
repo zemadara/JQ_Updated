@@ -129,10 +129,23 @@ Func ArenaLogic()
     JQ_Log("[ARENA] Entered combat zone, waiting for agents to initialize...")
     Sleep(3000)
 
+    ; Reset quarry capture flags for this new run.
+    $PurpleCapped = False
+    $YellowCapped = False
+    $GreenCapped = False
+
     Local $myID = Agent_GetMyID()
     Local $myX = Agent_GetAgentInfo($myID, "X")
     Local $myY = Agent_GetAgentInfo($myID, "Y")
-    JQ_Log("[ARENA] MyID=" & $myID & "  pos=(" & Round($myX) & "," & Round($myY) & ")  MapType=" & Map_GetInstanceInfo("Type"))
+    JQ_Log("[ARENA] MyID=" & $myID & "  pos=(" & Round($myX) & "," & Round($myY) & ")  MapType=" & Map_GetInstanceInfo("Type") & "  IsDead=" & Agent_GetAgentInfo($myID, "IsDead"))
+
+    ; Raw Map_Move test: verify movement works in this instance.
+    JQ_Log("[ARENA] Map_Move test: moving to (" & Round($myX + 300) & "," & Round($myY + 300) & ")")
+    Map_Move($myX + 300, $myY + 300)
+    Sleep(2000)
+    Local $testX = Agent_GetAgentInfo($myID, "X")
+    Local $testY = Agent_GetAgentInfo($myID, "Y")
+    JQ_Log("[ARENA] Map_Move result: moved=" & Round(ComputeDistance($myX, $myY, $testX, $testY)) & "  pos=(" & Round($testX) & "," & Round($testY) & ")")
 
     Local $RandomPortal = ($PlayingFor = "Kurzick") ? Random(0, 2, 1) : Random(3, 5, 1)
     JQ_Log("[ARENA] Side=" & $PlayingFor & "  Portal=" & $RandomPortal)
