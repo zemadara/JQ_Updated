@@ -250,6 +250,13 @@ Func OutpostLogic($mapId)
         EndIf
     WEnd
 
+    ; If we exited because of pause (map unchanged), cancel the queue so the
+    ; character doesn't enter a match uncontrolled while the bot is paused.
+    If Map_GetCharacterInfo("MapID") = $mapId And Not $boolRun Then
+        JQ_Log("[OUTPOST] Bot paused while in queue, cancelling queue slot.")
+        Core_SendPacket(0x4, $GC_I_HEADER_PARTY_CANCEL_ENTER_CHALLENGE)
+    EndIf
+
     JQ_Log("[OUTPOST] Left queue. MapID=" & Map_GetCharacterInfo("MapID"))
 EndFunc
 
