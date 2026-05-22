@@ -126,7 +126,13 @@ Func Main()
 EndFunc
 
 Func ArenaLogic()
-    JQ_Log("[ARENA] Entered combat zone.")
+    JQ_Log("[ARENA] Entered combat zone, waiting for agents to initialize...")
+    Sleep(3000)
+
+    Local $myID = Agent_GetMyID()
+    Local $myX = Agent_GetAgentInfo($myID, "X")
+    Local $myY = Agent_GetAgentInfo($myID, "Y")
+    JQ_Log("[ARENA] MyID=" & $myID & "  pos=(" & Round($myX) & "," & Round($myY) & ")  MapType=" & Map_GetInstanceInfo("Type"))
 
     Local $RandomPortal = ($PlayingFor = "Kurzick") ? Random(0, 2, 1) : Random(3, 5, 1)
     JQ_Log("[ARENA] Side=" & $PlayingFor & "  Portal=" & $RandomPortal)

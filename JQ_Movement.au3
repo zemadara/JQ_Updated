@@ -30,7 +30,10 @@ EndFunc
 ;   - $iTimeout (ms) prevents infinite loops on impassable geometry.
 Func JQ_MoveTo($fX, $fY, $iArrivalDist = 200, $iTimeout = 30000)
     Local $myID = Agent_GetMyID()
-    If $myID = 0 Then Return False
+    If $myID = 0 Then
+        JQ_Log("[MOVETO] MyID=0, aborting.")
+        Return False
+    EndIf
 
     Local $tTimer = TimerInit()
     Local $iStuck = 0
@@ -39,7 +42,10 @@ Func JQ_MoveTo($fX, $fY, $iArrivalDist = 200, $iTimeout = 30000)
     Do
         If Map_GetInstanceInfo("Type") = $GC_I_MAP_TYPE_LOADING Then Return False
         If Agent_GetAgentInfo($myID, "IsDead") Then Return False
-        If TimerDiff($tTimer) > $iTimeout Then Return False
+        If TimerDiff($tTimer) > $iTimeout Then
+            JQ_Log("[MOVETO] Timeout reached for target=(" & Round($fX) & "," & Round($fY) & ")")
+            Return False
+        EndIf
 
         Local $myX = Agent_GetAgentInfo($myID, "X")
         Local $myY = Agent_GetAgentInfo($myID, "Y")
@@ -49,7 +55,10 @@ Func JQ_MoveTo($fX, $fY, $iArrivalDist = 200, $iTimeout = 30000)
 
         If $bInitialMove Then
             $bInitialMove = False
+            JQ_Log("[MOVETO] Map_Move -> (" & Round($fX) & "," & Round($fY) & ")  pos=(" & Round($myX) & "," & Round($myY) & ")  dist=" & Round($dist))
             Map_Move($fX, $fY)
+            Sleep(250)
+            ContinueLoop
         EndIf
 
         Local $mvX = Agent_GetAgentInfo($myID, "MoveX")
@@ -57,14 +66,15 @@ Func JQ_MoveTo($fX, $fY, $iArrivalDist = 200, $iTimeout = 30000)
 
         If $mvX = 0 And $mvY = 0 Then
             $iStuck += 1
+            JQ_Log("[MOVETO] Stuck=" & $iStuck & "  pos=(" & Round($myX) & "," & Round($myY) & ")  dist=" & Round($dist))
             If $iStuck = 10 Then Chat_SendChat("stuck", "/")
-            If $iStuck >= 20 Then Return False
+            If $iStuck >= 40 Then Return False
             Map_Move($fX, $fY)
         Else
             $iStuck = 0
         EndIf
 
-        Sleep(100)
+        Sleep(250)
     Until False
 
     Return True
