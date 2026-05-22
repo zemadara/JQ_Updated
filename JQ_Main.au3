@@ -270,7 +270,7 @@ Func OutpostLogic($mapId)
     EndIf
 
     JQ_Log("[OUTPOST] Joining match queue...")
-    Core_SendPacket(0x8, $GC_I_HEADER_PARTY_ENTER_CHALLENGE, 0)
+    JQ_JoinQueue($mapId)
     JQ_Log("[OUTPOST] In queue, waiting for match...")
 
     ; GW keeps the queue slot alive server-side — no need to re-send the packet.
