@@ -89,8 +89,8 @@ Func JQ_MoveTo($fX, $fY, $iArrivalDist = 200, $iTimeout = 30000)
             JQ_Log("[MOVETO] Aborting - map loading.")
             Return False
         EndIf
-        If Agent_GetAgentInfo($myID, "IsDead") Then
-            JQ_Log("[MOVETO] Aborting - character dead.")
+        If Agent_GetAgentInfo($myID, "HP") <= 0 Then
+            JQ_Log("[MOVETO] Aborting - HP=0.")
             Return False
         EndIf
         If TimerDiff($tTimer) > $iTimeout Then
@@ -134,30 +134,20 @@ Func JQ_MoveTo($fX, $fY, $iArrivalDist = 200, $iTimeout = 30000)
     Return True
 EndFunc
 
-; Moves to arena portal $iPortal, interacts with its NPC/gadget, then waits for teleport.
+; Moves to arena portal $iPortal and waits for the automatic teleport.
 Func GoPortal($iPortal)
     Local $pX = $aPortals[$iPortal][0]
     Local $pY = $aPortals[$iPortal][1]
     JQ_Log("[PORTAL] Moving to portal #" & $iPortal & "  target=(" & $pX & "," & $pY & ")")
 
-    JQ_MoveTo($pX, $pY, 300, 25000)
+    JQ_MoveTo($pX, $pY, 200, 25000)
 
     Local $myID = Agent_GetMyID()
     Local $myX = Agent_GetAgentInfo($myID, "X")
     Local $myY = Agent_GetAgentInfo($myID, "Y")
-    JQ_Log("[PORTAL] At portal area  pos=(" & Round($myX) & "," & Round($myY) & ")")
+    JQ_Log("[PORTAL] At portal area  pos=(" & Round($myX) & "," & Round($myY) & ")  Waiting for teleport...")
 
-    JQ_ScanArea(1200)
-
-    Local $nearId = JQ_FindNearestInteractable($myX, $myY, 800)
-    If $nearId > 0 Then
-        JQ_Log("[PORTAL] Interacting with agent #" & $nearId)
-        JQ_Interact($nearId)
-    Else
-        JQ_Log("[PORTAL] No NPC/gadget found within 800 units.")
-    EndIf
-
-    ; Wait up to 10s for teleport — detected as a position jump > 1000 units.
+    ; Wait up to 10s — teleport is detected as a position jump > 1000 units.
     Local $tWait = TimerInit()
     While TimerDiff($tWait) < 10000
         Sleep(250)

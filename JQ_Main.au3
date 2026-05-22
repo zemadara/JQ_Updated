@@ -147,8 +147,8 @@ Func ArenaLogic()
             JQ_Log("[ARENA] Waiting - MapType=" & Map_GetInstanceInfo("Type"))
             ContinueLoop
         EndIf
-        If Agent_GetAgentInfo($myID, "IsDead") Then
-            JQ_Log("[ARENA] Waiting - IsDead=True")
+        If Agent_GetAgentInfo($myID, "HP") <= 0 Then
+            JQ_Log("[ARENA] Waiting - HP=0 (dead)")
             ContinueLoop
         EndIf
         ExitLoop
@@ -156,7 +156,7 @@ Func ArenaLogic()
 
     Local $myX = Agent_GetAgentInfo($myID, "X")
     Local $myY = Agent_GetAgentInfo($myID, "Y")
-    JQ_Log("[ARENA] Ready. MyID=" & $myID & "  pos=(" & Round($myX) & "," & Round($myY) & ")  MapType=" & Map_GetInstanceInfo("Type") & "  IsDead=" & Agent_GetAgentInfo($myID, "IsDead"))
+    JQ_Log("[ARENA] Ready. MyID=" & $myID & "  HP=" & Round(Agent_GetAgentInfo($myID, "HP") * 100) & "%  pos=(" & Round($myX) & "," & Round($myY) & ")  MapType=" & Map_GetInstanceInfo("Type"))
 
     ; Raw Map_Move test: verify movement works in this instance.
     JQ_Log("[ARENA] Map_Move test: moving to (" & Round($myX + 300) & "," & Round($myY + 300) & ")")
@@ -176,14 +176,14 @@ Func ArenaLogic()
         Sleep(250)
 
         Local $myID = Agent_GetMyID()
-        Local $isDead = Agent_GetAgentInfo($myID, "IsDead")
+        Local $isDead = (Agent_GetAgentInfo($myID, "HP") <= 0)
 
         If $isDead Then
-            JQ_Log("[ARENA] Dead, waiting for resurrection...")
+            JQ_Log("[ARENA] Dead (HP=0), waiting for resurrection...")
             Local $tRes = TimerInit()
             Do
                 Sleep(500)
-                $isDead = Agent_GetAgentInfo($myID, "IsDead")
+                $isDead = (Agent_GetAgentInfo($myID, "HP") <= 0)
             Until Not $isDead Or TimerDiff($tRes) > 30000 Or Map_GetCharacterInfo("MapID") <> $JadeQuarryArenaID
 
             If Not $isDead And Map_GetCharacterInfo("MapID") = $JadeQuarryArenaID Then
@@ -270,7 +270,8 @@ Func OutpostLogic($mapId)
     EndIf
 
     JQ_Log("[OUTPOST] Joining match queue...")
-    JQ_JoinQueue($mapId)
+    Sleep(1500)
+    Map_EnterChallenge(False)
     JQ_Log("[OUTPOST] In queue, waiting for match...")
 
     ; GW keeps the queue slot alive server-side — no need to re-send the packet.

@@ -92,58 +92,6 @@ Func TradeImperialX()
     Return True
 EndFunc
 
-; Finds and interacts with the competitive mission entry (registrar NPC or portal gadget).
-; Excludes the two known trade NPCs. Scan logs reveal the exact MID/GadgetID for hardcoding later.
-Func JQ_JoinQueue($mapId)
-    JQ_Log("[QUEUE] Scanning outpost for competitive entry agent...")
-
-    Local $officerX, $officerY, $tolkanoX, $tolkanoY
-    If $mapId = 296 Then
-        $officerX = -3298 : $officerY = -7560
-        $tolkanoX  = -2643 : $tolkanoY  = -6842
-    Else
-        $officerX = 2472 : $officerY = 11757
-        $tolkanoX  = 3585 : $tolkanoY  = 13641
-    EndIf
-
-    JQ_ScanArea(15000)
-
-    ; Find nearest NPC or gadget that is NOT one of the known trade NPCs.
-    Local $myID = Agent_GetMyID()
-    Local $myX = Agent_GetAgentInfo($myID, "X")
-    Local $myY = Agent_GetAgentInfo($myID, "Y")
-    Local $bestId = 0, $bestDist = 15000
-
-    For $i = 1 To Agent_GetMaxAgents()
-        If $i = $myID Then ContinueLoop
-        If Agent_GetAgentPtr($i) = 0 Then ContinueLoop
-        Local $allegiance = Agent_GetAgentInfo($i, "Allegiance")
-        Local $aType = Agent_GetAgentInfo($i, "Type")
-        If $allegiance <> $GC_I_ALLEGIANCE_NPC And $aType <> $GC_I_AGENT_TYPE_GADGET Then ContinueLoop
-        Local $aX = Agent_GetAgentInfo($i, "X")
-        Local $aY = Agent_GetAgentInfo($i, "Y")
-        If ComputeDistance($aX, $aY, $officerX, $officerY) < 500 Then ContinueLoop
-        If ComputeDistance($aX, $aY, $tolkanoX, $tolkanoY) < 500 Then ContinueLoop
-        Local $d = ComputeDistance($myX, $myY, $aX, $aY)
-        If $d < $bestDist Then
-            $bestDist = $d
-            $bestId = $i
-        EndIf
-    Next
-
-    If $bestId = 0 Then
-        JQ_Log("[QUEUE] No registrar/portal found. Waiting for map change passively.")
-        Return
-    EndIf
-
-    Local $rX = Agent_GetAgentInfo($bestId, "X")
-    Local $rY = Agent_GetAgentInfo($bestId, "Y")
-    JQ_Log("[QUEUE] Candidate: #" & $bestId & "  MID=" & Agent_GetAgentInfo($bestId, "ModelID") & "  GadgetID=" & Agent_GetAgentInfo($bestId, "GadgetID") & "  pos=(" & Round($rX) & "," & Round($rY) & ")")
-    JQ_MoveTo($rX, $rY, 300, 20000)
-    JQ_Interact($bestId)
-    JQ_Log("[QUEUE] Interaction sent.")
-EndFunc
-
 Func TradeBalthazarX()
     JQ_Log("[TRADE] Starting TradeBalthazarX...")
     Local $currentMap = Map_GetCharacterInfo("MapID")
