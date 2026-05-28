@@ -158,13 +158,11 @@ Func ArenaLogic()
     Local $myY = Agent_GetAgentInfo($myID, "Y")
     JQ_Log("[ARENA] Ready. MyID=" & $myID & "  HP=" & Round(Agent_GetAgentInfo($myID, "HP") * 100) & "%  pos=(" & Round($myX) & "," & Round($myY) & ")  MapType=" & Map_GetInstanceInfo("Type"))
 
-    ; Raw Map_Move test: verify movement works in this instance.
-    JQ_Log("[ARENA] Map_Move test: moving to (" & Round($myX + 300) & "," & Round($myY + 300) & ")")
-    Map_Move($myX + 300, $myY + 300)
-    Sleep(2000)
-    Local $testX = Agent_GetAgentInfo($myID, "X")
-    Local $testY = Agent_GetAgentInfo($myID, "Y")
-    JQ_Log("[ARENA] Map_Move result: moved=" & Round(ComputeDistance($myX, $myY, $testX, $testY)) & "  pos=(" & Round($testX) & "," & Round($testY) & ")")
+    ; Wait for the server connection to stabilise before sending any movement.
+    ; In PvP instances GW ignores Map_Move packets until the ping is non-zero.
+    JQ_Log("[ARENA] Waiting for ping stabilisation...")
+    Other_WaitPingStabilized(2000)
+    JQ_Log("[ARENA] Ping stabilised. Proceeding to portal.")
 
     Local $RandomPortal = ($PlayingFor = "Kurzick") ? Random(0, 2, 1) : Random(3, 5, 1)
     JQ_Log("[ARENA] Side=" & $PlayingFor & "  Portal=" & $RandomPortal)

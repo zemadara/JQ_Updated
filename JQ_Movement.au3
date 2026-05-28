@@ -72,7 +72,7 @@ Func JQ_Interact($agentId)
     EndIf
 EndFunc
 
-; Moves to ($fX, $fY) using velocity-based stuck detection.
+; Moves to ($fX, $fY) using position-delta stuck detection (reliable in both outpost and arena).
 Func JQ_MoveTo($fX, $fY, $iArrivalDist = 200, $iTimeout = 30000)
     Local $myID = Agent_GetMyID()
     If $myID = 0 Then
@@ -83,6 +83,8 @@ Func JQ_MoveTo($fX, $fY, $iArrivalDist = 200, $iTimeout = 30000)
     Local $tTimer = TimerInit()
     Local $iStuck = 0
     Local $bInitialMove = True
+    Local $prevX = Agent_GetAgentInfo($myID, "X")
+    Local $prevY = Agent_GetAgentInfo($myID, "Y")
 
     Do
         If Map_GetInstanceInfo("Type") = $GC_I_MAP_TYPE_LOADING Then
@@ -109,24 +111,27 @@ Func JQ_MoveTo($fX, $fY, $iArrivalDist = 200, $iTimeout = 30000)
 
         If $bInitialMove Then
             $bInitialMove = False
+            $prevX = $myX
+            $prevY = $myY
             JQ_Log("[MOVETO] Map_Move -> (" & Round($fX) & "," & Round($fY) & ")  pos=(" & Round($myX) & "," & Round($myY) & ")  dist=" & Round($dist))
             Map_Move($fX, $fY)
-            Sleep(250)
+            Sleep(500)
             ContinueLoop
         EndIf
 
-        Local $mvX = Agent_GetAgentInfo($myID, "MoveX")
-        Local $mvY = Agent_GetAgentInfo($myID, "MoveY")
-
-        If $mvX = 0 And $mvY = 0 Then
+        ; Stuck detection based on actual position change — MoveX/MoveY are unreliable in arena.
+        Local $moved = ComputeDistance($prevX, $prevY, $myX, $myY)
+        If $moved < 5 Then
             $iStuck += 1
-            JQ_Log("[MOVETO] Stuck=" & $iStuck & "  pos=(" & Round($myX) & "," & Round($myY) & ")  dist=" & Round($dist))
+            JQ_Log("[MOVETO] Stuck=" & $iStuck & "  moved=" & Round($moved) & "  pos=(" & Round($myX) & "," & Round($myY) & ")  dist=" & Round($dist))
             If $iStuck = 10 Then Chat_SendChat("stuck", "/")
-            If $iStuck >= 40 Then Return False
+            If $iStuck >= 80 Then Return False
             Map_Move($fX, $fY)
         Else
             $iStuck = 0
         EndIf
+        $prevX = $myX
+        $prevY = $myY
 
         Sleep(250)
     Until False
